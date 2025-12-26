@@ -1,11 +1,12 @@
- :root { --primary:#0b6efd; --ok:#198754; --warn:#dc3545; --bg:#f7f7f7; }
+/* Base UI */
+:root { --primary:#0b6efd; --ok:#198754; --warn:#dc3545; --bg:#f7f7f7; }
 * { box-sizing:border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 body { margin:0; background:var(--bg); color:#222; }
 header { padding:1rem; background:#fff; border-bottom:1px solid #ddd; }
 main { max-width:1100px; margin:1rem auto; padding:0 1rem; }
 .camera { display:grid; grid-template-columns: 1fr 340px; gap:1rem; align-items:start; }
-.camera__view { background:#fff; border:1px solid #ddd; padding:.75rem; }
-video { width:100%; max-height:60vh; background:#000; }
+.camera__view { background:#000; border:1px solid #222; padding:.75rem; position:relative; }
+video { width:100%; max-height:60vh; background:#000; display:block; }
 .controls { margin-top:.5rem; display:flex; gap:.5rem; flex-wrap:wrap; }
 button { background:var(--primary); color:#fff; border:none; border-radius:.25rem; padding:.5rem .75rem; cursor:pointer; }
 button:disabled { background:#6c757d; cursor:not-allowed; }
@@ -23,7 +24,7 @@ th { background:#fafafa; }
 #counts { margin-left:auto; font-weight:600; }
 @media (max-width:900px){ .camera { grid-template-columns: 1fr; } }
 
-/* --- Bloque de alerta con pictograma --- */
+/* Alerta con pictograma */
 .alert { display:flex; align-items:flex-start; gap:.75rem; border:1px solid #ddd; border-left-width: .4rem; padding:.75rem; border-radius:.25rem; background:#fff; margin-top:.5rem; }
 .alert__icon { width:24px; height:24px; flex-shrink:0; }
 .alert__content { display:flex; flex-direction:column; }
@@ -39,17 +40,16 @@ th { background:#fafafa; }
 .alert--error .alert__icon path:last-child  { fill:#b02a37; }
 #alertTitle { font-weight:700; }
 
-/* --- Bloque de búsqueda manual --- */
-.manual { margin-top:1rem; background:#fff; border:1px solid #ddd; padding:.75rem; }
-.manual__grid { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; }
-.manual__block { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
-.manual label { font-weight:600; }
-@media (max-width:800px){ .manual__grid { grid-template-columns: 1fr; } }
+/* Overlay MRZ */
+.camera__overlay { position: relative; }
+.mrz-frame { position: absolute; left: 5%; right: 5%; bottom: 12%; height: 14%; border: 3px dashed rgba(255,255,255,0.85); border-radius: .25rem; pointer-events: none; }
+.mrz-hint { position: absolute; top: -1.8rem; right: 0; background: rgba(0,0,0,0.6); color: #fff; padding: .2rem .4rem; font-size: .85rem; border-radius: .25rem; }
+@media (max-width:600px){ .mrz-frame { height:16%; bottom:10%; } }
 
-/* --- Badge de modo de validación --- */
+/* Badges */
 .badge { display:inline-block; padding: .15rem .4rem; font-size: .75rem; border-radius: .25rem; margin-left: .4rem; vertical-align: middle; font-weight: 600; }
 .badge--manual { color: #084298; background: #cfe2ff; border: 1px solid #b6d4fe; }
 .badge--auto   { color: #0f5132; background: #d1e7dd; border: 1px solid #badbcc; }
 
-/* Estado deshabilitado accesible */
+/* Accesibilidad disabled */
 button[aria-disabled="true"] { opacity: .7; cursor: not-allowed; }
