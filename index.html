@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Verificación DNI por OCR (MRZ)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Verificación por OCR (MRZ) · DNI</h1>
+    <p>
+      Enfoca el reverso del DNI (zona MRZ, 3 líneas con &lt;). Captura → OCR → valida dígitos MRZ → valida letra del DNI → cotejo con listado.
+    </p>
+  </header>
+
+  <main>
+    <section class="camera">
+      <div class="camera__view">
+        <video id="video" playsinline autoplay></video>
+        <div class="controls">
+          <button id="startCamBtn">📷 Activar cámara</button>
+          <button id="captureBtn" disabled>🎯 Capturar</button>
+          <button id="stopCamBtn" disabled>✋ Apagar</button>
+        </div>
+      </div>
+      <canvas id="canvas" width="1280" height="720" hidden></canvas>
+      <div class="preview">
+        <img id="snapshot" alt="Captura" />
+      </div>
+    </section>
+
+    <section class="ocr">
+      <h2>Resultado OCR</h2>
+      <pre id="ocrRaw"></pre>
+      <div class="parsed">
+        <div><strong>DNI detectado:</strong> <span id="dniValue">—</span></div>
+        <div><strong>Apellidos detectados:</strong> <span id="surnamesValue">—</span></div>
+        <div><strong>Nombre detectado:</strong> <span id="namesValue">—</span></div>
+        <div id="dniStatus" class="hint"></div>
+      </div>
+
+      <!-- Pictograma de estado MRZ -->
+      <div id="alertBox" class="alert" role="alert" aria-live="assertive">
+        <svg id="alertIcon" class="alert__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M1 21h22L12 2 1 21z"></path>
+          <path d="M12 16a1 1 0 110 2 1 1 0 010-2zm-1-7h2v5h-2z"></path>
+        </svg>
+        <div class="alert__content">
+          <strong id="alertTitle">Estado MRZ</strong>
+          <div id="alertText" class="alert__text">Esperando captura…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Búsqueda manual independiente del estado MRZ -->
+    <section class="manual">
+      <h2>Validación manual (apoyo)</h2>
+      <p class="hint">
+        Usa esta búsqueda si la MRZ devuelve advertencias o si necesitas validar sin OCR.
+      </p>
+
+      <div class="manual__grid">
+        <div class="manual__block">
+          <label for="manualDniInput">Buscar por DNI:</label>
+          <input id="manualDniInput" type="text" placeholder="12345678Z" />
+          <button id="manualDniBtn">🔎 Buscar DNI</button>
+          <small id="manualDniHint" class="hint"></small>
+        </div>
+
+        <div class="manual__block">
+          <label for="manualSurnameInput">Buscar por apellido:</label>
+          <input id="manualSurnameInput" type="text" placeholder="Apellido (inicio)" />
+          <button id="manualSurnameBtn">🔎 Buscar apellido</button>
+        </div>
+      </div>
+
+      <p class="hint">
+        Consejo: si el cotejo automático está deshabilitado por advertencias MRZ, puedes validar
+        manualmente desde el resultado del listado (botón <strong>Validar</strong>).
+      </p>
+    </section>
+
+    <section class="results">
+      <h2>Coincidencias en Convocatoria</h2>
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Apellido</th><th>DNI</th><th>Estado</th><th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="actions">
+        <button id="exportLogBtn">⬇ Exportar validados (CSV)</button>
+        <button id="exportIncBtn">⬇ Exportar incidencias (CSV)</button>
+        <button id="searchListBtn" disabled aria-disabled="true">🔎 Cotejar con listado</button>
+        <span id="counts"></span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>© Organización · RGPD: uso interno, minimización de datos</small>
+  </footer>
+
+  <!-- Tesseract.js (OCR) por CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6.0.0/dist/tesseract.min.js"></script>
+
+  <!-- ESM para exponer validateMRZfromOCR globalmente -->
+  <script type="module">
+    import { validateMRZfromOCR } from './mrz.js';
+    window.validateMRZfromOCR = validateMRZfromOCR;
+  </script>
+
+  <script src="app.js"></script>
+</body>
+</html>

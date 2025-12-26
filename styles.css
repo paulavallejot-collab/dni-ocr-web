@@ -1,0 +1,55 @@
+ :root { --primary:#0b6efd; --ok:#198754; --warn:#dc3545; --bg:#f7f7f7; }
+* { box-sizing:border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+body { margin:0; background:var(--bg); color:#222; }
+header { padding:1rem; background:#fff; border-bottom:1px solid #ddd; }
+main { max-width:1100px; margin:1rem auto; padding:0 1rem; }
+.camera { display:grid; grid-template-columns: 1fr 340px; gap:1rem; align-items:start; }
+.camera__view { background:#fff; border:1px solid #ddd; padding:.75rem; }
+video { width:100%; max-height:60vh; background:#000; }
+.controls { margin-top:.5rem; display:flex; gap:.5rem; flex-wrap:wrap; }
+button { background:var(--primary); color:#fff; border:none; border-radius:.25rem; padding:.5rem .75rem; cursor:pointer; }
+button:disabled { background:#6c757d; cursor:not-allowed; }
+.preview img { width:100%; border:1px solid #ddd; background:#fff; }
+.ocr, .results { margin-top:1rem; background:#fff; border:1px solid #ddd; padding:.75rem; }
+.hint { margin-top:.25rem; font-size:.9rem; }
+#dniStatus { font-weight:600; }
+
+table { width:100%; border-collapse:collapse; margin-top:.75rem; }
+th, td { border:1px solid #eee; padding:.5rem; text-align:left; }
+th { background:#fafafa; }
+.row-valid { background:#eafbea; }
+.row-inc { background:#ffecec; }
+.actions { margin-top:.5rem; display:flex; gap:.5rem; align-items:center; }
+#counts { margin-left:auto; font-weight:600; }
+@media (max-width:900px){ .camera { grid-template-columns: 1fr; } }
+
+/* --- Bloque de alerta con pictograma --- */
+.alert { display:flex; align-items:flex-start; gap:.75rem; border:1px solid #ddd; border-left-width: .4rem; padding:.75rem; border-radius:.25rem; background:#fff; margin-top:.5rem; }
+.alert__icon { width:24px; height:24px; flex-shrink:0; }
+.alert__content { display:flex; flex-direction:column; }
+.alert__text { margin-top:.25rem; font-size:.95rem; }
+.alert--ok     { border-left-color: #198754; background:#f2fcf5; }
+.alert--ok .alert__icon path:first-child { fill:#198754; }
+.alert--ok .alert__icon path:last-child  { fill:#198754; }
+.alert--warn   { border-left-color: #ffc107; background:#fff8e1; }
+.alert--warn .alert__icon path:first-child { fill:#ffc107; }
+.alert--warn .alert__icon path:last-child  { fill:#d39e00; }
+.alert--error  { border-left-color: #dc3545; background:#ffecec; }
+.alert--error .alert__icon path:first-child { fill:#dc3545; }
+.alert--error .alert__icon path:last-child  { fill:#b02a37; }
+#alertTitle { font-weight:700; }
+
+/* --- Bloque de búsqueda manual --- */
+.manual { margin-top:1rem; background:#fff; border:1px solid #ddd; padding:.75rem; }
+.manual__grid { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; }
+.manual__block { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.manual label { font-weight:600; }
+@media (max-width:800px){ .manual__grid { grid-template-columns: 1fr; } }
+
+/* --- Badge de modo de validación --- */
+.badge { display:inline-block; padding: .15rem .4rem; font-size: .75rem; border-radius: .25rem; margin-left: .4rem; vertical-align: middle; font-weight: 600; }
+.badge--manual { color: #084298; background: #cfe2ff; border: 1px solid #b6d4fe; }
+.badge--auto   { color: #0f5132; background: #d1e7dd; border: 1px solid #badbcc; }
+
+/* Estado deshabilitado accesible */
+button[aria-disabled="true"] { opacity: .7; cursor: not-allowed; }
