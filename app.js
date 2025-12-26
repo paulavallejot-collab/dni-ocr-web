@@ -1,12 +1,17 @@
-// Estado y utilidades
+/* ===========================
+   Configuración y estado
+   =========================== */
 const CSV_URL = 'data/convocatoria.csv';
 const DNI_LETTERS = "TRWAGMYFPDXBNJZSQVHLCKE";
 let attendees = [];
 let logs = JSON.parse(localStorage.getItem('logs') || '[]');
 let incidents = JSON.parse(localStorage.getItem('incidents') || '[]');
 let stream = null;
-let mrzState = { status: 'init', checks: null };
+let mrzState = { status: 'init', checks: null }; // 'ok' | 'warn' | 'error' | 'init'
 
+/* ===========================
+   Utilidades generales
+   =========================== */
 function csvToJSON(csvText){
   const lines = csvText.trim().split(/\r?\n/);
   const headers = lines.shift().split(',').map(h=>h.trim());
@@ -17,7 +22,7 @@ function csvToJSON(csvText){
     return obj;
   });
 }
-function normalizeDNI(s){ return (s||'').toUpperCase().replace(/\s+/g,'').replace(/-/g,'').replace(/[\.]/g,'').trim(); }
+function normalizeDNI(s){ return (s||'').toUpperCase().replace(/\s+/g,'').replace(/-/g,''); }
 function isValidDNISpain(dni){
   const m = dni.match(/^(\d{8})([A-Z])$/);
   if(!m) return false;
@@ -39,10 +44,11 @@ function setCounts(){
   localStorage.setItem('incidents', JSON.stringify(incidents));
 }
 
-// Cámara
+/* ===========================
+   Cámara (getUserMedia)
+   =========================== */
 const videoEl = document.getElementById('video');
 const canvasEl = document.getElementById('canvas');
-const procCanvasEl = document.getElementById('procCanvas');
 const snapImg = document.getElementById('snapshot');
 const startBtn = document.getElementById('startCamBtn');
 const stopBtn = document.getElementById('stopCamBtn');
@@ -68,53 +74,18 @@ stopBtn.onclick = ()=>{
   capBtn.disabled = true; stopBtn.disabled = true;
 };
 
-// Preprocesado: grayscale + contraste + umbral
-function preprocessImage(srcCanvas, dstCanvas, opts = { contrast: 1.4, threshold: 150 }) {
-  const sw = srcCanvas.width, sh = srcCanvas.height;
-  dstCanvas.width = sw; dstCanvas.height = sh;
-  const sctx = srcCanvas.getContext('2d');
-  const dctx = dstCanvas.getContext('2d');
-  const imgData = sctx.getImageData(0, 0, sw, sh);
-  const data = imgData.data;
-  // Grayscale
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i+1], b = data[i+2];
-    const y = 0.299*r + 0.587*g + 0.114*b;
-    data[i] = data[i+1] = data[i+2] = y;
-  }
-  // Contraste
-  const factor = (259 * (opts.contrast * 255 + 255)) / (255 * (259 - opts.contrast * 255));
-  for (let i = 0; i < data.length; i += 4) {
-    const y = data[i];
-    const c = factor * (y - 128) + 128;
-    const cl = Math.max(0, Math.min(255, c));
-    data[i] = data[i+1] = data[i+2] = cl;
-  }
-  // Umbral
-  const thr = opts.threshold;
-  for (let i = 0; i < data.length; i += 4) {
-    const y = data[i];
-    const v = y > thr ? 255 : 0;
-    data[i] = data[i+1] = data[i+2] = v; data[i+3] = 255;
-  }
-  dctx.putImageData(imgData, 0, 0);
-  return dstCanvas.toDataURL('image/png');
-}
-
-function sanitizeDocNumber(doc){
-  return (doc||'').replace(/O/g,'0').replace(/B/g,'8').replace(/S/g,'5');
-}
-
 capBtn.onclick = ()=>{
   const ctx = canvasEl.getContext('2d');
   const w = canvasEl.width, h = canvasEl.height;
   ctx.drawImage(videoEl, 0, 0, w, h);
-  const procDataUrl = preprocessImage(canvasEl, procCanvasEl, { contrast: 1.4, threshold: 150 });
-  snapImg.src = procDataUrl;
-  runOCR(procDataUrl);
+  const dataUrl = canvasEl.toDataURL('image/png');
+  snapImg.src = dataUrl;
+  runOCR(dataUrl);
 };
 
-// OCR & MRZ
+/* ===========================
+   OCR y MRZ
+   =========================== */
 const ocrRawEl = document.getElementById('ocrRaw');
 const dniValEl = document.getElementById('dniValue');
 const surValEl = document.getElementById('surnamesValue');
@@ -132,7 +103,7 @@ function setAlert(level, title, message){
   else                     box.classList.add('alert--error');
   ttl.textContent = title || 'Estado MRZ';
   txt.textContent = message || '';
-  // Política: Cotejo solo cuando MRZ = OK
+  // Política: Cotejo sólo cuando MRZ = OK
   searchBtn.disabled = (level !== 'ok');
   searchBtn.setAttribute('aria-disabled', searchBtn.disabled ? 'true' : 'false');
 }
@@ -142,27 +113,21 @@ async function runOCR(dataUrl){
   dniStatusEl.textContent = '';
   setAlert('warn','Procesando','Estamos leyendo la MRZ. Espera unos segundos.');
 
-  const { data: { text } } = await Tesseract.recognize(
-    dataUrl,
-    'eng',
-    { tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<' }
-  );
-
+  const { data: { text } } = await Tesseract.recognize(dataUrl, 'eng', { logger:m=>console.log(m) });
   ocrRawEl.textContent = text;
+
   const mrz = window.validateMRZfromOCR(text);
 
   if (!mrz.ok){
     mrzState = { status: 'error', checks: null };
-    setAlert('error', 'MRZ inválida', 'No se pudo validar la banda MRZ. Recaptura enfocando las 3 líneas y dentro del marco.');
+    setAlert('error', 'MRZ inválida', 'No se pudo validar la banda MRZ. Recaptura enfocando las 3 líneas o deriva a incidencias.');
     dniStatusEl.textContent = '❌ MRZ no válida';
     dniStatusEl.style.color = '#dc3545';
-    console.warn('[OCR] Texto reconocido (ruido):', text);
     return;
   }
 
   const f = mrz.fields;
-  const cleanDoc = sanitizeDocNumber(f.docNumber);
-  dniValEl.textContent  = cleanDoc;
+  dniValEl.textContent  = f.docNumber;
   surValEl.textContent  = f.surnames;
   nameValEl.textContent = f.names;
 
@@ -182,7 +147,9 @@ async function runOCR(dataUrl){
   }
 }
 
-// Listado y validación (CSV estático)
+/* ===========================
+   Listado y validación
+   =========================== */
 async function loadCSV(){
   const res = await fetch(CSV_URL);
   const txt = await res.text();
@@ -198,10 +165,7 @@ document.getElementById('exportIncBtn').onclick = ()=>{
 };
 
 document.getElementById('searchListBtn').onclick = ()=>{
-  const raw = dniValEl.textContent || '';
-  const dni = normalizeDNI(raw);
-  if (!dni) { alert('No hay DNI para buscar. Captura de nuevo.'); return; }
-  console.log('[BUSCAR] DNI normalizado:', dni);
+  const dni = dniValEl.textContent;
   const rows = attendees.filter(r=> normalizeDNI(r.DNI) === dni);
   if(!rows.length){
     addIncident({DNI:dni, Nombre:nameValEl.textContent, Apellido:surValEl.textContent}, 'DNI no encontrado en la convocatoria');
@@ -270,16 +234,34 @@ function addIncident(r, reason){
   setCounts();
 }
 
-// Búsqueda manual
+/* ===========================
+   Búsqueda manual
+   =========================== */
 function manualSearchByDNI(){
   const input = document.getElementById('manualDniInput').value || '';
   const dni = normalizeDNI(input);
+  const hintEl = document.getElementById('manualDniHint');
+  if (!isValidDNISpain(dni)){
+    hintEl.textContent = 'Formato/letra de DNI no válida. Puedes corregir o continuar.';
+    hintEl.style.color = '#dc3545';
+  } else {
+    hintEl.textContent = 'DNI válido.';
+    hintEl.style.color = '#198754';
+  }
   const rows = attendees.filter(r=> normalizeDNI(r.DNI) === dni);
   renderResults(rows, {mode:'manual'});
+  if(!rows.length){
+    addIncident({DNI:dni}, 'DNI no encontrado en convocatoria (búsqueda manual)');
+    alert('No está en la lista. Derivar a incidencias si procede.');
+  }
 }
 
 function manualSearchBySurname(){
   const s = (document.getElementById('manualSurnameInput').value || '').trim().toUpperCase();
   const results = attendees.filter(r=> (r.Apellido||'').toUpperCase().startsWith(s));
   renderResults(results, {mode:'manual'});
+  if(!results.length){ alert('Sin coincidencias por apellido.'); }
 }
+
+document.getElementById('manualDniBtn').onclick = manualSearchByDNI;
+document.getElementById('manualSurnameBtn').onclick = manualSearchBySurname;
